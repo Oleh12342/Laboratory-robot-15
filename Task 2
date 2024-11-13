@@ -1,0 +1,39 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Завантаження даних з CSV файлу
+file_path = 'comptagevelo2014.csv'
+bike_data = pd.read_csv(file_path)
+
+# Перетворення стовпця 'Date' у формат дати
+bike_data['Date'] = pd.to_datetime(bike_data['Date'], format='%Y-%m-%d', errors='coerce')
+
+# Перевірка на наявність некоректних значень
+if bike_data['Date'].isnull().any():
+    print("Є проблеми з перетворенням дат. Перевірте формат файлу.")
+
+# Додавання стовпця 'Місяць' і 'Назва місяця з числом'
+bike_data['Місяць'] = bike_data['Date'].dt.month
+bike_data['Назва місяця'] = bike_data['Date'].dt.month_name() + ' (' + bike_data['Date'].dt.month.astype(str) + ')'
+
+# Підрахунок загальної кількості велосипедистів за кожен місяць
+monthly_counts = bike_data.groupby('Назва місяця').sum(numeric_only=True).sum(axis=1)
+
+# Сортування місяців у правильному порядку
+month_order = [f"{month} ({i})" for i, month in enumerate(pd.date_range('2024-01-01', periods=12, freq='ME').strftime('%B'), 1)]
+monthly_counts = monthly_counts.reindex(month_order)
+
+# Визначення найбільш популярного місяця
+most_popular_month = monthly_counts.idxmax()
+most_popular_count = monthly_counts.max()
+print(f'Найбільш популярний місяць: {most_popular_month} (кількість: {most_popular_count})')
+
+# Побудова графіку
+plt.figure(figsize=(12, 6))
+plt.plot(monthly_counts.index, monthly_counts.values, marker='o', linestyle='-', color='b')
+plt.title('Аналіз відвідуваності велосипедистами велодоріжок за 2014 рік')
+plt.xlabel('Місяць')
+plt.ylabel('Кількість велосипедистів')
+plt.grid(True)
+plt.xticks(rotation=45)
+plt.show()
